@@ -18,16 +18,17 @@ TenantFile = Json.Document(Extension.Contents("IATenants.json"));
 GetTenantName = (TenantSel as text) as text =>TenantSel;
 
 TenantType = type function (
-        TenantSel as (type text meta [
-            Documentation.FieldCaption = "Tenant",
-            Documentation.FieldDescription = "Enter Tenant Short Name",
-            Documentation.SampleValues = {"LVVWD", "SUNRI"}
+        TenantSel as (
+            type text meta [
+                Documentation.FieldCaption = "Tenant",
+                Documentation.FieldDescription = "Enter Tenant Short Name",
+                Documentation.SampleValues = {"LVVWD", "SUNRI"}
         ]))
         as any;
 
-Tenant = Value.ReplaceType(GetTenantName,TenantType);
+//Tenant = Value.ReplaceType(GetTenantName,TenantType);
 
-// Tenant = "TEMPE";
+Tenant = "TEMPE";
 
 tenantid = GetTenantId(Tenant);
 
