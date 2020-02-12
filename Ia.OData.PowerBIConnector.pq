@@ -12,7 +12,24 @@ logout_uri = "https://idenserver.itrontotal.com/connect/endsession";
 scopes = "tslug openid profile roles email offline_access tid.";
 grantType = "client_credentials";
 TenantFile = Json.Document(Extension.Contents("IATenants.json"));
-tenantid = GetTenantId("LVVWD");
+
+
+//Get the tenant from the user
+GetTenantName = (TenantSel as text) as text =>TenantSel;
+
+TenantType = type function (
+        TenantSel as (type text meta [
+            Documentation.FieldCaption = "Tenant",
+            Documentation.FieldDescription = "Enter Tenant Short Name",
+            Documentation.SampleValues = {"LVVWD", "SUNRI"}
+        ]))
+        as any;
+
+Tenant = Value.ReplaceType(GetTenantName,TenantType);
+
+// Tenant = "TEMPE";
+
+tenantid = GetTenantId(Tenant);
 
 GetTenantId = (tenantSel as text) =>
 let
