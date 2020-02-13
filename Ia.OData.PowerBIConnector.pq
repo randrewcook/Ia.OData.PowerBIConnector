@@ -13,39 +13,38 @@ scopes = "tslug openid profile roles email offline_access tid.";
 grantType = "client_credentials";
 TenantFile = Json.Document(Extension.Contents("IATenants.json"));
 
-//Tenant = Value.ReplaceType(GetTenantName,GetTenantType);
-
-Tenant = GetTenantName("TEMPE");
-
-GetTenantType = type function (
-        TenantSel as (
-            type text meta [
-                Documentation.FieldCaption = "Tenant",
-                Documentation.FieldDescription = "Enter Tenant Short Name",
-                Documentation.SampleValues = {"LVVWD", "SUNRI"}
-        ]))
-        as any;
-
-//Get the tenant from the user
-GetTenantName = (TenantSel as text) as text =>
+ListofTenants = (Source as list) as list=>
     let
-       Result=TenantSel
-    in 
-       Result;
+        ConvertTable = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
+        Expanded = Table.ExpandRecordColumn(ConvertTable, "Column1", {"Tenant", "tid"}, {"Column1.Tenant", "Column1.tid"}),
+        lstTenants = Table.Column(Expanded,"Column1.Tenant")
+    in
+        lstTenants;
 
-tenantid = GetTenantId(Tenant);
+Tenants = ListofTenants(TenantFile);
 
-GetTenantId = (tenantSelected as text) =>
-let
-    Gettid = List.Select(TenantFile, each [Tenant]=tenantSelected),
-    tidRecord = Gettid{0},
-    result = Record.Field(tidRecord,"tid")
-in
-    result;
+tenantid = GetTenantId("TEMPE");
 
 //Main
 [DataSource.Kind="Ia.OData.PowerBIConnector", Publish="Ia.OData.PowerBIConnector.Publish"]
-shared Ia.OData.PowerBIConnector.Feed = () =>
+shared Ia.OData.PowerBIConnector.Contents = Value.ReplaceType(Ia.OData.PowerBIConnector.Feed, Ia.OData.PowerBIConnector.Type);
+
+Ia.OData.PowerBIConnector.Type = type function (
+    tenant as (type text meta [
+        Documentation.FieldCaption = "Tenant",
+        Documentation.FieldDescription = "Tenant Short Name",
+        Documentation.AllowedValues = Tenants
+    ])) as any;
+
+GetTenantId = (tenantSelected as text) =>
+    let
+        Gettid = List.Select(TenantFile, each [Tenant]=tenantSelected),
+        tidRecord = Gettid{0},
+        result = Record.Field(tidRecord,"tid")
+    in
+        result;
+    
+Ia.OData.PowerBIConnector.Feed = (tenant as text) =>
     let
         source = OData.Feed(odata_uri, [#"itron-route-override" = "iaodata"], [ ODataVersion = 4, MoreColumns = true ])
     in
@@ -53,7 +52,7 @@ shared Ia.OData.PowerBIConnector.Feed = () =>
 
 // Data Source Kind description
 Ia.OData.PowerBIConnector = [
-    TestConnection = (dataSourcPath) => { "Ia.OData.PowerBIConnector.Feed" },
+    TestConnection = (dataSourcPath) => { "Ia.OData.PowerBIConnector.Contents" },
     Authentication = [
         OAuth = [
             StartLogin = StartLogin,
