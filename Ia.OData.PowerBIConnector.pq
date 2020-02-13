@@ -13,11 +13,11 @@ scopes = "tslug openid profile roles email offline_access tid.";
 grantType = "client_credentials";
 TenantFile = Json.Document(Extension.Contents("IATenants.json"));
 
+//Tenant = Value.ReplaceType(GetTenantName,GetTenantType);
 
-//Get the tenant from the user
-GetTenantName = (TenantSel as text) as text =>TenantSel;
+Tenant = GetTenantName("TEMPE");
 
-TenantType = type function (
+GetTenantType = type function (
         TenantSel as (
             type text meta [
                 Documentation.FieldCaption = "Tenant",
@@ -26,19 +26,22 @@ TenantType = type function (
         ]))
         as any;
 
-//Tenant = Value.ReplaceType(GetTenantName,TenantType);
-
-Tenant = "TEMPE";
+//Get the tenant from the user
+GetTenantName = (TenantSel as text) as text =>
+    let
+       Result=TenantSel
+    in 
+       Result;
 
 tenantid = GetTenantId(Tenant);
 
-GetTenantId = (tenantSel as text) =>
+GetTenantId = (tenantSelected as text) =>
 let
-    Gettid = List.Select(TenantFile, each [Tenant]=tenantSel),
+    Gettid = List.Select(TenantFile, each [Tenant]=tenantSelected),
     tidRecord = Gettid{0},
-    tid = Record.Field(tidRecord,"tid")
+    result = Record.Field(tidRecord,"tid")
 in
-    tid;
+    result;
 
 //Main
 [DataSource.Kind="Ia.OData.PowerBIConnector", Publish="Ia.OData.PowerBIConnector.Publish"]
@@ -138,6 +141,10 @@ TokenMethod = (grantType, tokenField, code) =>
     in
         result;
 
+// 
+// Load common library functions
+// 
+// TEMPORARY WORKAROUND until we're able to reference other M modules
 Extension.LoadFunction = (name as text) =>
     let
         binary = Extension.Contents(name),
