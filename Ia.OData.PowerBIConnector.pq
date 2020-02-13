@@ -22,7 +22,6 @@ ListofTenants = (Source as list) as list=>
         lstTenants;
 
 Tenants = ListofTenants(TenantFile);
-
 tenantid = GetTenantId("TEMPE");
 
 //Main
@@ -31,10 +30,12 @@ shared Ia.OData.PowerBIConnector.Contents = Value.ReplaceType(Ia.OData.PowerBICo
 
 Ia.OData.PowerBIConnector.Type = type function (
     tenant as (type text meta [
-        Documentation.FieldCaption = "Tenant",
-        Documentation.FieldDescription = "Tenant Short Name",
+        Documentation.FieldCaption = "Select your tenant short name:",
+        Documentation.FieldDescription = "Your tenant short name is your tenant name, but shorter.",
         Documentation.AllowedValues = Tenants
-    ])) as any;
+    ])) as any meta [
+        Documentation.Name = "Connect to Itron Analytics",
+        Documentation.LongDescription = "Connects to your Itron Analytics system for custom reporting when you select the tenant short name."];
 
 GetTenantId = (tenantSelected as text) =>
     let
@@ -46,6 +47,7 @@ GetTenantId = (tenantSelected as text) =>
     
 Ia.OData.PowerBIConnector.Feed = (tenant as text) =>
     let
+        _tenant = GetTenantId(tenant),
         source = OData.Feed(odata_uri, [#"itron-route-override" = "iaodata"], [ ODataVersion = 4, MoreColumns = true ])
     in
         source;
