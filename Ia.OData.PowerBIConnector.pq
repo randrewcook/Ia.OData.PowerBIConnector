@@ -25,6 +25,8 @@ ListofTenants = (Source as list) as list=>
         lstTenants;
 
 Tenants = ListofTenants(TenantFile);
+tenant = "TEMPE";
+tenantid = GetTenantId(tenant);
 
 //Main
 [DataSource.Kind="Ia.OData.PowerBIConnector", Publish="Ia.OData.PowerBIConnector.Publish"]
@@ -33,7 +35,7 @@ shared Ia.OData.PowerBIConnector.Contents = Value.ReplaceType(Ia.OData.PowerBICo
 GetTenantType = type function (
     tenant as (type text meta [
         Documentation.FieldCaption = "Select your tenant short name:",
-        Documentation.FieldDescription = "Your tenant short name is your tenant name, but shorter.",
+        Documentation.FieldDescription = "Your tenant short name is your tenant name, but short.",
         Documentation.AllowedValues = Tenants
     ])) as text meta [
         Documentation.Name = "Connect to Itron Analytics",
