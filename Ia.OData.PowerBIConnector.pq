@@ -11,8 +11,11 @@ authorize_uri = "https://idenserver.itrontotal.com/connect/authorize";
 logout_uri = "https://idenserver.itrontotal.com/connect/endsession";
 scopes = "tslug openid profile roles email offline_access tid.";
 grantType = "client_credentials";
+
+//Parse the JSON file with all the tenant info
 TenantFile = Json.Document(Extension.Contents("IATenants.json"));
 
+//Get the list of tenants
 ListofTenants = (Source as list) as list=>
     let
         ConvertTable = Table.FromList(Source, Splitter.SplitByNothing(), null, null, ExtraValues.Error),
@@ -22,39 +25,37 @@ ListofTenants = (Source as list) as list=>
         lstTenants;
 
 Tenants = ListofTenants(TenantFile);
-tenantid = GetTenantId("TEMPE");
 
 //Main
 [DataSource.Kind="Ia.OData.PowerBIConnector", Publish="Ia.OData.PowerBIConnector.Publish"]
-shared Ia.OData.PowerBIConnector.Contents = Value.ReplaceType(Ia.OData.PowerBIConnector.Feed, Ia.OData.PowerBIConnector.Type);
+shared Ia.OData.PowerBIConnector.Contents = Value.ReplaceType(Ia.OData.PowerBIConnector.Feed, GetTenantType);
 
-Ia.OData.PowerBIConnector.Type = type function (
+GetTenantType = type function (
     tenant as (type text meta [
         Documentation.FieldCaption = "Select your tenant short name:",
         Documentation.FieldDescription = "Your tenant short name is your tenant name, but shorter.",
         Documentation.AllowedValues = Tenants
-    ])) as any meta [
+    ])) as text meta [
         Documentation.Name = "Connect to Itron Analytics",
-        Documentation.LongDescription = "Connects to your Itron Analytics system for custom reporting when you select the tenant short name."];
+        Documentation.LongDescription = "Connect to your Itron Analytics system for custom reporting."];
 
-GetTenantId = (tenantSelected as text) =>
+GetTenantId = (tenant as text) =>
     let
-        Gettid = List.Select(TenantFile, each [Tenant]=tenantSelected),
+        Gettid = List.Select(TenantFile, each [Tenant]=tenant),
         tidRecord = Gettid{0},
         result = Record.Field(tidRecord,"tid")
     in
         result;
-    
-Ia.OData.PowerBIConnector.Feed = (tenant as text) =>
+
+shared Ia.OData.PowerBIConnector.Feed = (tenant as text) =>
     let
-        _tenant = GetTenantId(tenant),
-        source = OData.Feed(odata_uri, [#"itron-route-override" = "iaodata"], [ ODataVersion = 4, MoreColumns = true ])
+       source = OData.Feed(odata_uri, [#"itron-route-override" = "iaodata"], [ ODataVersion = 4, MoreColumns = true ])
     in
-        source;
+       source;
 
 // Data Source Kind description
 Ia.OData.PowerBIConnector = [
-    TestConnection = (dataSourcPath) => { "Ia.OData.PowerBIConnector.Contents" },
+    TestConnection = (dataSourcPath) => { "Ia.OData.PowerBIConnector.Contents", dataSourcPath },
     Authentication = [
         OAuth = [
             StartLogin = StartLogin,
@@ -85,7 +86,7 @@ Ia.OData.PowerBIConnector.Icons = [
 
 
 //OAuth Flow Management Functions
-StartLogin = (resourceUrl, state, display) =>
+StartLogin = (resourceUrl, state, display) =>  
     let
         authorizeUrl = authorize_uri & "?" & Uri.BuildQueryString([
             client_id = client_id,  
